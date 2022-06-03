@@ -39,7 +39,22 @@ io.on("connection", function (socket) {
         ...(sessions[sessionId] || { id: sessionId }),
         broadcaster: null,
       };
+      io.in(sessionId).emit("session_update", sessions[sessionId]);
     }
+  });
+
+  socket.on("disconnecting", () => {
+    console.log("Disconnecting: " + socket.id);
+    console.log(socket.rooms);
+    socket.rooms.forEach((sessionId) => {
+      if (sessions[sessionId]?.broadcaster == socket.id) {
+        sessions[sessionId] = {
+          ...(sessions[sessionId] || { id: sessionId }),
+          broadcaster: null,
+        };
+        io.in(sessionId).emit("session_update", sessions[sessionId]);
+      }
+    });
   });
 
   // Someone wants to share their screen to sessionId
@@ -54,9 +69,17 @@ io.on("connection", function (socket) {
       io.in(sessionId).emit("session_update", sessions[sessionId]);
     }
   });
+
+  // WebRTC signaling
+  socket.on("webrtc-signal", (signal) => {
+    console.log("Got webrtc signal:");
+    console.log(signal);
+    io.in(signal.to).emit("webrtc-signal", signal);
+  });
 });
 
 const path = require("path");
+const { sign } = require("crypto");
 
 app.use("/public", express.static("../frontend/build/", { etag: false }));
 app.use("/*", (req, res) =>
