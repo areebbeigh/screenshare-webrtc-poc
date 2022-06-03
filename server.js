@@ -81,9 +81,9 @@ io.on("connection", function (socket) {
 const path = require("path");
 const { sign } = require("crypto");
 
-app.use("/public", express.static("../frontend/build/", { etag: false }));
+app.use("/public", express.static("./frontend/build/", { etag: false }));
 app.use("/*", (req, res) =>
-  res.sendFile(path.resolve(__dirname, "../frontend/build/index.html"))
+  res.sendFile(path.resolve(__dirname, "./frontend/build/index.html"))
 );
 
 server.listen(process.env.PORT || 8000, () => console.log(`Server running.`));
