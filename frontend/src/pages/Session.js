@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import DrawCanvas from "../components/DrawCanvas";
+import ReceiverCanvas from "../components/ReceiverCanvas";
 import SocketConnection from "../lib/SocketConnection";
 import WebRTCConnectionManager from "../lib/WebRTCConnection";
 
@@ -13,7 +15,9 @@ export default function Session() {
   const screenStreamRef = useRef();
   const videoElRef = useRef();
   // Is this user the screen broadcaster?
-  const isBroadcaster = session?.broadcaster === socketConnection.socket.id;
+  const isBroadcaster =
+    !!session?.broadcaster &&
+    session?.broadcaster === socketConnection.socket.id;
 
   useEffect(() => {
     let mounted = true;
@@ -25,7 +29,7 @@ export default function Session() {
 
     socketConnection.socket.on("session_update", (session) => {
       if (!mounted) return;
-      if (!session.broadcaster) {
+      if (!session?.broadcaster) {
         setShowStream(false);
         webRtcManager.resetPeers();
         // Remove all old listeners for webrtc signaling.
@@ -145,6 +149,7 @@ export default function Session() {
 
   return (
     <>
+      {isBroadcaster && <ReceiverCanvas />}
       <p>You are {socketConnection.socket.id}</p>
       {!session?.broadcaster ? (
         <button onClick={handleShare}>Share Screen</button>
@@ -153,13 +158,16 @@ export default function Session() {
           <p>Broadcaster: {session?.broadcaster}</p>
         </>
       )}
-      <video
-        autoPlay
-        ref={videoElRef}
-        hidden={!showStream}
-        width="80%"
-        height="80%"
-      />
+      <div style={{ position: "relative", width: "80%", height: "80%" }}>
+        {showStream && <DrawCanvas videoEl={videoElRef} />}
+        <video
+          autoPlay
+          ref={videoElRef}
+          hidden={!showStream}
+          width="100%"
+          height="100%"
+        />
+      </div>
     </>
   );
 }

@@ -1,4 +1,6 @@
-import Peer from "simple-peer";
+// I would have to react-scripts eject to solve this properly. Too lazy.
+// https://github.com/feross/simple-peer/issues/183
+const Peer = window.SimplePeer;
 
 // Singleton to manage peer connections for a session
 export default class WebRTCConnectionManager {
@@ -6,6 +8,7 @@ export default class WebRTCConnectionManager {
     if (!WebRTCConnectionManager._instance) {
       WebRTCConnectionManager._instance = this;
       this.remotePeers = {};
+      this.newPeerCallbacks = [];
     }
     return WebRTCConnectionManager._instance;
   }
@@ -24,6 +27,8 @@ export default class WebRTCConnectionManager {
       console.error(err);
       removePeer();
     });
+
+    this.newPeerCallbacks.forEach((cb) => cb(peer));
     return peer;
   }
 
@@ -35,5 +40,14 @@ export default class WebRTCConnectionManager {
     console.log("Reseting peers");
     Object.values(this.remotePeers).forEach((p) => p.destroy());
     this.remotePeers = {};
+  }
+
+  listPeers() {
+    return Object.values(this.remotePeers);
+  }
+
+  onNewPeer(callback) {
+    this.newPeerCallbacks.push(callback);
+    this.listPeers().forEach(callback);
   }
 }
